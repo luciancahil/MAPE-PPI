@@ -125,6 +125,7 @@ def pretrain_vae():
 def main():
 
     protein_data, ppi_g, ppi_list, labels, ppi_split_dict = load_data(param['dataset'], param['split_mode'], param['seed'])
+    breakpoint()
     
     vae_model = CodeBook(param, DataLoader(protein_data, batch_size=512, shuffle=False, collate_fn=collate)).to(device)
     if args.ckpt_path is None:
@@ -233,10 +234,17 @@ if __name__ == "__main__":
     parser.add_argument("--pre_train", type=str, default=None)
     parser.add_argument("--ckpt_path", type=str, default=None)
 
+    parser.add_argument("--scheduler", type=str, default="ReduceLROnPlateau", choices=["ReduceLROnPlateau", "CosineAnnealingLR", "StepLR", "ExponentialLR", "FixedLR"])
+    # gamma for expontialLR + stepLR, factor for reduce on plateau, what we decrease by in cossim
+    parser.add_argument("--scheduler_gamma", type=float, default=0.5)
+    # patience for reduce on plateau, step_size for stepLR, increase amount for cossim
+    parser.add_argument("--scheduler_epochs", type=float, default=10)
+
     args = parser.parse_args()
     param = args.__dict__
     param.update(nni.get_next_parameter())
     timestamp = time.strftime("%Y-%m-%d %H-%M-%S") + f"-%3d" % ((time.time() - int(time.time())) * 1000)
+    print("Starting training at {}".format(timestamp))
 
     if os.path.exists("../configs/param_configs.json"):
         param = json.loads(open("../configs/param_configs.json", 'r').read())[param['dataset']][param['split_mode']]
