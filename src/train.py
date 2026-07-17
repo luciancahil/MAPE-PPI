@@ -187,10 +187,15 @@ def main():
             else:
                 es += 1
 
+            if(param['scheduler'] == "ReduceLROnPlateau"):
+                current_lr = optimizer.param_groups[0]['lr']
+            else:
+                current_lr = scheduler.get_last_lr()[0]
+
             print("\033[0;30;46m Epoch: {}, Train Loss: {:.5f} | Train: {:.4f}, Val: {:.4f}, Test: {:.4f}, Learning Rate: {:.6f} | Val Best: {:.4f}, Test Val: {:.4f}, Test Best: {:.4f} | Best Epoch: {}\033[0m".format(
-                    epoch, train_loss, train_f1_score, val_f1_score, test_f1_score, scheduler.get_last_lr()[0], val_best, test_val, test_best, best_epoch))
+                    epoch, train_loss, train_f1_score, val_f1_score, test_f1_score, current_lr, val_best, test_val, test_best, best_epoch))
             log_file.write(" Epoch: {}, Train Loss: {:.5f} | Train: {:.4f}, Val: {:.4f}, Test: {:.4f}, Learning Rate: {:.6f} | Val Best: {:.4f}, Test Val: {:.4f}, Test Best: {:.4f} | Best Epoch: {}\n".format(
-                    epoch, train_loss, train_f1_score, val_f1_score, test_f1_score, scheduler.get_last_lr()[0], val_best, test_val, test_best, best_epoch))
+                    epoch, train_loss, train_f1_score, val_f1_score, test_f1_score, current_lr, val_best, test_val, test_best, best_epoch))
             log_file.flush()
 
             if es == 500:
