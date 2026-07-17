@@ -125,7 +125,6 @@ def pretrain_vae():
 def main():
 
     protein_data, ppi_g, ppi_list, labels, ppi_split_dict = load_data(param['dataset'], param['split_mode'], param['seed'])
-    breakpoint()
     
     vae_model = CodeBook(param, DataLoader(protein_data, batch_size=512, shuffle=False, collate_fn=collate)).to(device)
     if args.ckpt_path is None:
@@ -143,8 +142,21 @@ def main():
 
     model = GIN(param).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=float(param['learning_rate']), weight_decay=float(param['weight_decay']))
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10, verbose=True)
     loss_fn = nn.BCEWithLogitsLoss().to(device)
+
+    print(param.keys())
+
+    if param['scheduler'] == "ReduceLROnPlateau":
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=param['scheduler_gamma'], patience=param['scheduler_epochs'], verbose=True)
+    elif param['scheduler'] == "CosineAnnealingLR":
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=param['max_epochs'], eta_min=0, last_epoch=-1)
+    elif param['scheduler'] == "StepLR":
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=param['scheduler_epochs'], gamma=param['scheduler_gamma'], last_epoch=-1)
+    elif param['scheduler'] == "ExponentialLR":
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=param['scheduler_gamma'], last_epoch=-1)
+    elif param['scheduler'] == "FixedLR":
+            scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda epoch: 1.0, last_epoch=-1)
+        
 
     es = 0
     val_best = 0
@@ -175,10 +187,10 @@ def main():
             else:
                 es += 1
 
-            print("\033[0;30;46m Epoch: {}, Train Loss: {:.5f} | Train: {:.4f}, Val: {:.4f}, Test: {:.4f} | Val Best: {:.4f}, Test Val: {:.4f}, Test Best: {:.4f} | Best Epoch: {}\033[0m".format(
-                    epoch, train_loss, train_f1_score, val_f1_score, test_f1_score, val_best, test_val, test_best, best_epoch))
-            log_file.write(" Epoch: {}, Train Loss: {:.5f} | Train: {:.4f}, Val: {:.4f}, Test: {:.4f} | Val Best: {:.4f}, Test Val: {:.4f}, Test Best: {:.4f} | Best Epoch: {}\n".format(
-                    epoch, train_loss, train_f1_score, val_f1_score, test_f1_score, val_best, test_val, test_best, best_epoch))
+            print("\033[0;30;46m Epoch: {}, Train Loss: {:.5f} | Train: {:.4f}, Val: {:.4f}, Test: {:.4f}, Learning Rate: {:.6f} | Val Best: {:.4f}, Test Val: {:.4f}, Test Best: {:.4f} | Best Epoch: {}\033[0m".format(
+                    epoch, train_loss, train_f1_score, val_f1_score, test_f1_score, scheduler.get_last_lr()[0], val_best, test_val, test_best, best_epoch))
+            log_file.write(" Epoch: {}, Train Loss: {:.5f} | Train: {:.4f}, Val: {:.4f}, Test: {:.4f}, Learning Rate: {:.6f} | Val Best: {:.4f}, Test Val: {:.4f}, Test Best: {:.4f} | Best Epoch: {}\n".format(
+                    epoch, train_loss, train_f1_score, val_f1_score, test_f1_score, scheduler.get_last_lr()[0], val_best, test_val, test_best, best_epoch))
             log_file.flush()
 
             if es == 500:
@@ -241,13 +253,25 @@ if __name__ == "__main__":
     parser.add_argument("--scheduler_epochs", type=float, default=10)
 
     args = parser.parse_args()
-    param = args.__dict__
+
+    # Start with CLI arguments
+    param = vars(args).copy()
+
+    # Load defaults from config
+    if os.path.exists("../configs/param_configs.json"):
+        config = json.loads(
+            open("../configs/param_configs.json").read()
+        )[param["dataset"]][param["split_mode"]]
+
+        # JSON provides defaults, CLI overrides
+        config.update(param)
+        param = config
+
+    # Finally let NNI override everything
     param.update(nni.get_next_parameter())
     timestamp = time.strftime("%Y-%m-%d %H-%M-%S") + f"-%3d" % ((time.time() - int(time.time())) * 1000)
     print("Starting training at {}".format(timestamp))
 
-    if os.path.exists("../configs/param_configs.json"):
-        param = json.loads(open("../configs/param_configs.json", 'r').read())[param['dataset']][param['split_mode']]
 
     if param['data_mode'] == 0:
         param['dataset'] = 'SHS27k'
