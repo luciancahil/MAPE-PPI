@@ -5,7 +5,7 @@ import pickle
 import random
 import numpy as np
 from tqdm import tqdm
-
+import io
 import dgl 
 import torch
 
@@ -13,6 +13,15 @@ from utils import get_bfs_sub_graph, get_dfs_sub_graph
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+class CPU_Unpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == 'torch.storage' and name == '_load_from_bytes':
+            return lambda b: torch.load(
+                io.BytesIO(b),
+                map_location=torch.device('cpu'),
+                weights_only=False,  # needed for general objects
+            )
+        return super().find_class(module, name)
 
 def load_data(dataset, split_mode, seed, skip_head=True):
 
@@ -34,9 +43,15 @@ def load_data(dataset, split_mode, seed, skip_head=True):
 
     if os.path.exists("../data/processed_data/{}_ppi.pkl".format(dataset)):
         with open("../data/processed_data/{}_ppi.pkl".format(dataset), "rb") as tf:
-            ppi_list = pickle.load(tf)
+            if(torch.cuda.is_available()):
+                ppi_list = pickle.load(tf)
+            else:
+                ppi_list = CPU_Unpickler(tf).load()
         with open("../data/processed_data/{}_ppi_label.pkl".format(dataset), "rb") as tf:
-            ppi_label_list = pickle.load(tf)
+            if(torch.cuda.is_available()):
+                ppi_label_list = pickle.load(tf)
+            else:   
+                CPU_Unpickler(tf).load()
 
     else:
         
@@ -107,7 +122,10 @@ class ProteinDatasetDGL(torch.utils.data.Dataset):
         
         if os.path.exists("../data/processed_data/{}_protein_graphs.pkl".format(dataset)):
             with open("../data/processed_data/{}_protein_graphs.pkl".format(dataset), "rb") as tf:
-                self.prot_graph_list = pickle.load(tf)
+                if torch.cuda.is_available():
+                    self.prot_graph_list = pickle.load(tf)
+                else:
+                    self.prot_graph_list = CPU_Unpickler(tf).load()
         
         else:
 
