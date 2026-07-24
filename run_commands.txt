@@ -1,0 +1,286 @@
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler CosineAnnealingLR --learning_rate 1e10 > cosineanneal_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler FixedLR --learning_rate 1e10 > fixed_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ExponentialLR --scheduler_gamma 0.99 --learning_rate 1e10 > exp99_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ExponentialLR --scheduler_gamma 0.95 --learning_rate 1e10 > exp95_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.1 --scheduler_epochs 10 --learning_rate 1e10 > reduce1010_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.1 --scheduler_epochs 20 --learning_rate 1e10 > reduce1020_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.5 --scheduler_epochs 10 --learning_rate 1e10 > reduce5010_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.5 --scheduler_epochs 20 --learning_rate 1e10 > reduce5020_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.5 --scheduler_epochs 20 --learning_rate 1e10 > step5050_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.5 --scheduler_epochs 100 --learning_rate 1e10 > step50100_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.2 --scheduler_epochs 50 --learning_rate 1e10 > step2050_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.2 --scheduler_epochs 100 --learning_rate 1e10 > step20100_lr1e10.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler CosineAnnealingLR --learning_rate 1e-1 > cosineanneal_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler FixedLR --learning_rate 1e-1 > fixed_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ExponentialLR --scheduler_gamma 0.99 --learning_rate 1e-1 > exp99_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ExponentialLR --scheduler_gamma 0.95 --learning_rate 1e-1 > exp95_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.1 --scheduler_epochs 10 --learning_rate 1e-1 > reduce1010_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.1 --scheduler_epochs 20 --learning_rate 1e-1 > reduce1020_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.5 --scheduler_epochs 10 --learning_rate 1e-1 > reduce5010_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.5 --scheduler_epochs 20 --learning_rate 1e-1 > reduce5020_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.5 --scheduler_epochs 20 --learning_rate 1e-1 > step5050_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.5 --scheduler_epochs 100 --learning_rate 1e-1 > step50100_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.2 --scheduler_epochs 50 --learning_rate 1e-1 > step2050_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.2 --scheduler_epochs 100 --learning_rate 1e-1 > step20100_lr1e-1.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler CosineAnnealingLR --learning_rate 1e-4 > cosineanneal_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler FixedLR --learning_rate 1e-4 > fixed_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ExponentialLR --scheduler_gamma 0.99 --learning_rate 1e-4 > exp99_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ExponentialLR --scheduler_gamma 0.95 --learning_rate 1e-4 > exp95_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.1 --scheduler_epochs 10 --learning_rate 1e-4 > reduce1010_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.1 --scheduler_epochs 20 --learning_rate 1e-4 > reduce1020_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.5 --scheduler_epochs 10 --learning_rate 1e-4 > reduce5010_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.5 --scheduler_epochs 20 --learning_rate 1e-4 > reduce5020_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.5 --scheduler_epochs 20 --learning_rate 1e-4 > step5050_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.5 --scheduler_epochs 100 --learning_rate 1e-4 > step50100_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.2 --scheduler_epochs 50 --learning_rate 1e-4 > step2050_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.2 --scheduler_epochs 100 --learning_rate 1e-4 > step20100_lr1e-4.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler CosineAnnealingLR --learning_rate 1e-9 > cosineanneal_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler FixedLR --learning_rate 1e-9 > fixed_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ExponentialLR --scheduler_gamma 0.99 --learning_rate 1e-9 > exp99_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ExponentialLR --scheduler_gamma 0.95 --learning_rate 1e-9 > exp95_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.1 --scheduler_epochs 10 --learning_rate 1e-9 > reduce1010_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.1 --scheduler_epochs 20 --learning_rate 1e-9 > reduce1020_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.5 --scheduler_epochs 10 --learning_rate 1e-9 > reduce5010_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler ReduceLROnPlateau --scheduler_gamma 0.5 --scheduler_epochs 20 --learning_rate 1e-9 > reduce5020_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.5 --scheduler_epochs 20 --learning_rate 1e-9 > step5050_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.5 --scheduler_epochs 100 --learning_rate 1e-9 > step50100_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.2 --scheduler_epochs 50 --learning_rate 1e-9 > step2050_lr1e-9.txt
+
+
+srun apptainer exec --nv /home/royhe62/scratch/sifs/mape.sif \
+    conda run --no-capture-output -n MAPE-PPI \
+    python -B train.py --dataset SHS27k --split_mode bfs \
+    --scheduler StepLR --scheduler_gamma 0.2 --scheduler_epochs 100 --learning_rate 1e-9 > step20100_lr1e-9.txt
