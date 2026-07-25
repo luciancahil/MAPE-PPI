@@ -191,10 +191,63 @@ def pretrain_vae():
     train_losses = [float("inf")]
 
 
+    
+
 
     for epoch in range(1, param["pre_epoch"] + 1):
         epoch_loss = 0.0
         num_batches = 0
+
+
+
+        for iter_num, batch_graph in enumerate(vae_dataloader):
+
+            batch_graph.to(device)
+
+            z, e, e_q_loss, recon_loss, mask_loss = vae_model(batch_graph)
+            loss_vae = e_q_loss + recon_loss + mask_loss * param['mask_loss']
+
+            vae_optimizer.zero_grad()
+            loss_vae.backward()
+            vae_optimizer.step()
+
+            if (epoch - 1) % param['log_num'] == 0 and iter_num == 0:
+                print("\033[0;30;43m Pre-training VQ-VAE | Epoch: {}, Batch: {} | Train Loss: {:.5f} | {:.5f} {:.5f} {:.5f}\033[0m".format(epoch, iter_num, loss_vae.item(), e_q_loss.item(), recon_loss.item(), mask_loss.item()))
+                log_file.write("Pre-training VQ-VAE | Epoch: {}, Batch: {} | Train Loss: {:.5f} | {:.5f} {:.5f} {:.5f}\n".format(epoch, iter_num, loss_vae.item(), e_q_loss.item(), recon_loss.item(), mask_loss.item()))
+                log_file.flush()
+
+            epoch_loss += loss_vae.item()
+            num_batches += 1
+
+        epoch_loss /= num_batches
+
+        train_losses.append(epoch_loss)
+
+        loss_ratio = epoch_loss / train_losses[-2]
+
+        if(loss_ratio < 1):
+            improved_epochs += 1
+
+        if param['scheduler'] == "ReduceLROnPlateau":
+            scheduler.step(epoch_loss)
+
+        elif param['scheduler'] == "CosSim":
+
+            if loss_ratio > 2:
+                print("Loss exploded, rolling back.")
+
+                ckpt = torch.load("best_vae_state.pth")
+                vae_model.load_state_dict(ckpt["model"])
+                vae_optimizer.load_state_dict(ckpt["optimizer"])
+
+            scheduler.cos_step(
+                cos_sim=-1,
+                loss_ratio=loss_ratio,
+                old_lr=None
+            )
+
+        else:
+            scheduler.step()
 
         if epoch % checkpoint_frequency == 0:
             if epoch_loss < best_checkpoint_loss:
@@ -226,55 +279,7 @@ def pretrain_vae():
                     old_lr=best_checkpoint_lr
                 )
 
-            improved_epochs = 0
-
-        for iter_num, batch_graph in enumerate(vae_dataloader):
-
-            batch_graph.to(device)
-
-            z, e, e_q_loss, recon_loss, mask_loss = vae_model(batch_graph)
-            loss_vae = e_q_loss + recon_loss + mask_loss * param['mask_loss']
-
-            vae_optimizer.zero_grad()
-            loss_vae.backward()
-            vae_optimizer.step()
-
-            if (epoch - 1) % param['log_num'] == 0 and iter_num == 0:
-                print("\033[0;30;43m Pre-training VQ-VAE | Epoch: {}, Batch: {} | Train Loss: {:.5f} | {:.5f} {:.5f} {:.5f}\033[0m".format(epoch, iter_num, loss_vae.item(), e_q_loss.item(), recon_loss.item(), mask_loss.item()))
-                log_file.write("Pre-training VQ-VAE | Epoch: {}, Batch: {} | Train Loss: {:.5f} | {:.5f} {:.5f} {:.5f}\n".format(epoch, iter_num, loss_vae.item(), e_q_loss.item(), recon_loss.item(), mask_loss.item()))
-                log_file.flush()
-
-            epoch_loss += loss_vae.item()
-            num_batches += 1
-
-        epoch_loss /= num_batches
-
-        train_losses.append(epoch_loss)
-
-        loss_ratio = epoch_loss / best_checkpoint_loss if best_checkpoint_loss < float("inf") else 1.0
-
-        if param['scheduler'] == "ReduceLROnPlateau":
-            scheduler.step(epoch_loss)
-
-        elif param['scheduler'] == "CosSim":
-
-            if loss_ratio > 2:
-                print("Loss exploded, rolling back.")
-
-                ckpt = torch.load("best_vae_state.pth")
-                vae_model.load_state_dict(ckpt["model"])
-                vae_optimizer.load_state_dict(ckpt["optimizer"])
-
-            scheduler.cos_step(
-                cos_sim=-1,
-                loss_ratio=loss_ratio,
-                old_lr=None
-            )
-
-        else:
-            scheduler.step()
-
-            
+            improved_epochs = 0            
     ckpt = torch.load("best_vae_state.pth")
 
     vae_model.load_state_dict(ckpt["model"])
