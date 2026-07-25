@@ -114,6 +114,13 @@ def evaluator(model, ppi_g, prot_embed, ppi_list, labels, index, batch_size, mod
 
 def pretrain_vae():
 
+
+    checkpoint_frequency = 10
+    needed_improvement_proportion = 0.3 # If the model has not improved for 30% of the checkpoint frequency, we will return to the best checkpoint and adjust the learning rate accordingly.
+    needed_improvements_epochs = needed_improvement_proportion * checkpoint_frequency
+    improved_epochs = 0
+
+
     if args.pre_train is None:
         protein_data, ppi_g, ppi_list, labels, ppi_split_dict = load_data(param['dataset'], param['split_mode'], param['seed'])
     else:
@@ -128,9 +135,99 @@ def pretrain_vae():
     vae_dataloader = DataLoader(protein_data, batch_size=512, shuffle=True, collate_fn=collate)
     vae_model = CodeBook(param, DataLoader(protein_data, batch_size=512, shuffle=False, collate_fn=collate)).to(device)
     vae_optimizer = torch.optim.Adam(vae_model.parameters(), lr=float(param['learning_rate']), weight_decay=float(param['weight_decay']))
-    
+    if param['scheduler'] == "ReduceLROnPlateau":
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            vae_optimizer,
+            mode='min',
+            factor=param['scheduler_gamma'],
+            patience=param['scheduler_epochs'],
+            verbose=True
+        )
+    elif param['scheduler'] == "CosineAnnealingLR":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            vae_optimizer,
+            T_max=param['pre_epoch'],
+            eta_min=0,
+            last_epoch=-1
+        )
+    elif param['scheduler'] == "StepLR":
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            vae_optimizer,
+            step_size=param['scheduler_epochs'],
+            gamma=param['scheduler_gamma'],
+            last_epoch=-1
+        )
+    elif param['scheduler'] == "ExponentialLR":
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(
+            vae_optimizer,
+            gamma=param['scheduler_gamma'],
+            last_epoch=-1
+        )
+    elif param['scheduler'] == "FixedLR":
+        scheduler = torch.optim.lr_scheduler.LambdaLR(
+            vae_optimizer,
+            lr_lambda=lambda epoch: 1.0,
+            last_epoch=-1
+        )
+    elif param['scheduler'] == "CosSim":
+        scheduler = CosSimScheduler(
+            vae_optimizer,
+            catastrophic_gamma=param['scheduler_gamma'],
+            increase_gamma=param['scheduler_epochs'],
+            last_epoch=-1
+        )
+
+
+
+
+    best_checkpoint_loss = float("inf")
+    best_checkpoint_lr = vae_optimizer.param_groups[0]["lr"]
+
+    torch.save({
+        "model": copy.deepcopy(vae_model.state_dict()),
+        "optimizer": copy.deepcopy(vae_optimizer.state_dict()),
+    }, "best_vae_state.pth")
+
+    train_losses = [float("inf")]
+
+
 
     for epoch in range(1, param["pre_epoch"] + 1):
+        epoch_loss = 0.0
+        num_batches = 0
+
+        if epoch % checkpoint_frequency == 0:
+            if epoch_loss < best_checkpoint_loss:
+
+                torch.save({
+                    "model": copy.deepcopy(vae_model.state_dict()),
+                    "optimizer": copy.deepcopy(vae_optimizer.state_dict()),
+                }, "best_vae_state.pth")
+
+                best_checkpoint_loss = epoch_loss
+                best_checkpoint_lr = vae_optimizer.param_groups[0]["lr"]
+
+            elif (
+                improved_epochs < needed_improvements_epochs
+                and isinstance(scheduler, CosSimScheduler)
+            ):
+
+                print("Rolling back VAE checkpoint")
+
+
+                ckpt = torch.load("best_vae_state.pth")
+                vae_model.load_state_dict(ckpt["model"])
+                vae_optimizer.load_state_dict(ckpt["optimizer"])
+
+
+                scheduler.cos_step(
+                    cos_sim=-1,
+                    loss_ratio=loss_ratio,
+                    old_lr=best_checkpoint_lr
+                )
+
+            improved_epochs = 0
+
         for iter_num, batch_graph in enumerate(vae_dataloader):
 
             batch_graph.to(device)
@@ -147,6 +244,40 @@ def pretrain_vae():
                 log_file.write("Pre-training VQ-VAE | Epoch: {}, Batch: {} | Train Loss: {:.5f} | {:.5f} {:.5f} {:.5f}\n".format(epoch, iter_num, loss_vae.item(), e_q_loss.item(), recon_loss.item(), mask_loss.item()))
                 log_file.flush()
 
+            epoch_loss += loss_vae.item()
+            num_batches += 1
+
+        epoch_loss /= num_batches
+
+        train_losses.append(epoch_loss)
+
+        loss_ratio = epoch_loss / best_checkpoint_loss if best_checkpoint_loss < float("inf") else 1.0
+
+        if param['scheduler'] == "ReduceLROnPlateau":
+            scheduler.step(epoch_loss)
+
+        elif param['scheduler'] == "CosSim":
+
+            if loss_ratio > 2:
+                print("Loss exploded, rolling back.")
+
+                ckpt = torch.load("best_vae_state.pth")
+                vae_model.load_state_dict(ckpt["model"])
+                vae_optimizer.load_state_dict(ckpt["optimizer"])
+
+            scheduler.cos_step(
+                cos_sim=-1,
+                loss_ratio=loss_ratio,
+                old_lr=None
+            )
+
+        else:
+            scheduler.step()
+
+            
+    ckpt = torch.load("best_vae_state.pth")
+
+    vae_model.load_state_dict(ckpt["model"])
     torch.save(vae_model.state_dict(), os.path.join(output_dir, f'vae_model.ckpt'))
 
     del vae_model
@@ -207,10 +338,13 @@ def main():
 
     best_checkpoint_lr = optimizer.param_groups[0]['lr']
 
-    # save initial model state
-    state = copy.deepcopy(model.state_dict())
 
-    torch.save(state, best_model_path)
+
+    torch.save({
+        "model": copy.deepcopy(model.state_dict()),
+        "optimizer": copy.deepcopy(optimizer.state_dict()),
+    }, best_model_path)
+
 
     train_losses = [best_checkpoint_loss] # large initial values so that the first
 
@@ -234,8 +368,10 @@ def main():
         elif(param['scheduler'] == "CosSim"):
             if(loss_ratio > 2 and isinstance(scheduler, CosSimScheduler)):
                 print("Loss is more than 2x best loss, rolling back and reducing learning rate by catastrophic gamma: {}".format(scheduler.catastrophic_gamma))
-                state = torch.load(best_model_path)
-                model.load_state_dict(state)
+
+                ckpt = torch.load(best_model_path)
+                model.load_state_dict(ckpt["model"])
+                optimizer.load_state_dict(ckpt["optimizer"])
 
             scheduler.cos_step(cos_sim=-1, loss_ratio=loss_ratio, old_lr=None)
         else:
@@ -253,7 +389,6 @@ def main():
             if val_f1_score >= val_best:
                 val_best = val_f1_score
                 test_val = test_f1_score
-                state = copy.deepcopy(model.state_dict())
                 es = 0
                 best_epoch = epoch
             else:
@@ -280,24 +415,29 @@ def main():
             print("Checkpointing model at epoch {}".format(epoch))
             if(train_loss < best_checkpoint_loss):
 
-                torch.save(state, best_model_path)
+                torch.save({
+                    "model": copy.deepcopy(model.state_dict()),
+                    "optimizer": copy.deepcopy(optimizer.state_dict()),
+                }, best_model_path)
                 best_checkpoint_loss = train_loss
                 best_train_f1 = train_f1_score
                 best_checkpoint_lr = optimizer.param_groups[0]['lr']
             elif(improved_epochs < needed_improvements_epochs and isinstance(scheduler, CosSimScheduler)):
                 print(f"Model has not improved for {needed_improvement_proportion * 100}% of epochs, rolling back to best checkpoint and reducing learning rate by catastrophic gamma: {scheduler.catastrophic_gamma}")
-                state = torch.load(best_model_path)
-                model.load_state_dict(state)
+                ckpt = torch.load(best_model_path)
+                model.load_state_dict(ckpt["model"])
+                optimizer.load_state_dict(ckpt["optimizer"])
 
                 scheduler.cos_step(cos_sim=-1, loss_ratio=loss_ratio, old_lr=best_checkpoint_lr)
 
 
             improved_epochs = 0
 
-    torch.save(state, os.path.join(output_dir, "model_state.pth"))
-    log_file.close()
 
-    model.load_state_dict(state)
+
+    log_file.close()
+    ckpt = torch.load(best_model_path)
+    model.load_state_dict(ckpt["model"])
     eval_output, eval_labels = evaluator(model, ppi_g, prot_embed, ppi_list, labels, ppi_split_dict['test_index'], param['batch_size'], 'output')
 
     np.save(os.path.join(output_dir, "eval_output.npy"), eval_output.detach().cpu().numpy())
