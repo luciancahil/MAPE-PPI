@@ -188,7 +188,28 @@ def pretrain_vae():
         "optimizer": copy.deepcopy(vae_optimizer.state_dict()),
     }, "best_vae_state.pth")
 
-    train_losses = [float("inf")]
+
+    epoch_loss = 0
+    num_batches = 0
+    for iter_num, batch_graph in enumerate(vae_dataloader):
+        batch_graph.to(device)
+
+        z, e, e_q_loss, recon_loss, mask_loss = vae_model(batch_graph)
+        loss_vae = e_q_loss + recon_loss + mask_loss * param['mask_loss']
+
+
+        if (epoch - 1) % param['log_num'] == 0 and iter_num == 0:
+            print("\033[0;30;43m Pre-training VQ-VAE | Epoch: {}, Batch: {} | Train Loss: {:.5f} | {:.5f} {:.5f} {:.5f}\033[0m".format(epoch, iter_num, loss_vae.item(), e_q_loss.item(), recon_loss.item(), mask_loss.item()))
+            log_file.write("Pre-training VQ-VAE | Epoch: {}, Batch: {} | Train Loss: {:.5f} | {:.5f} {:.5f} {:.5f}\n".format(epoch, iter_num, loss_vae.item(), e_q_loss.item(), recon_loss.item(), mask_loss.item()))
+            log_file.flush()
+
+        epoch_loss += loss_vae.item()
+        num_batches += 1
+
+    epoch_loss /= num_batches
+    vae_optimizer.zero_grad()
+    
+    train_losses = [epoch_loss]
 
 
     
@@ -222,6 +243,8 @@ def pretrain_vae():
         epoch_loss /= num_batches
 
         train_losses.append(epoch_loss)
+
+        print(f"Current vs. Previous loss: {epoch_loss:.3e}:{train_losses[-2]:.3e}")
 
         loss_ratio = epoch_loss / train_losses[-2]
 
@@ -405,6 +428,7 @@ def main():
                 current_lr = scheduler.get_last_lr()[0]
 
             print("Best Learning Rate: {:.4e}".format(best_checkpoint_lr))
+            print(f"Number of improved epochs vs. required: {improved_epochs} : {needed_improvements_epochs}")
             print("\033[0;30;46m Epoch: {}, Train Loss: {:.5f} | Train: {:.4f}, Val: {:.4f}, Test: {:.4f}, Learning Rate: {:.4e} | Val Best: {:.4f}, Test Val: {:.4f}, Test Best: {:.4f} | Best Epoch: {}\033[0m".format(
                     epoch, train_loss, train_f1_score, val_f1_score, test_f1_score, current_lr, val_best, test_val, test_best, best_epoch))
             log_file.write(" Epoch: {}, Train Loss: {:.5f} | Train: {:.4f}, Val: {:.4f}, Test: {:.4f}, Learning Rate: {:.4e} | Val Best: {:.4f}, Test Val: {:.4f}, Test Best: {:.4f} | Best Epoch: {}\n".format(
