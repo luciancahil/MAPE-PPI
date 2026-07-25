@@ -302,6 +302,8 @@ def pretrain_vae():
                     old_lr=best_checkpoint_lr
                 )
 
+                best_checkpoint_lr = vae_optimizer.param_groups[0]["lr"]
+
             improved_epochs = 0            
     ckpt = torch.load("best_vae_state.pth")
 
@@ -458,6 +460,7 @@ def main():
                 optimizer.load_state_dict(ckpt["optimizer"])
 
                 scheduler.cos_step(cos_sim=-1, loss_ratio=loss_ratio, old_lr=best_checkpoint_lr)
+                best_checkpoint_lr = optimizer.param_groups[0]['lr']
 
 
             improved_epochs = 0
